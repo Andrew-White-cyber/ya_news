@@ -7,15 +7,16 @@ import pytest
 
 
 def test_news_count(all_news, not_author_client):
+    """Не более 10 новостей на странице."""
     News.objects.bulk_create(all_news)
     response = not_author_client.get(reverse('news:home'))
     object_list = response.context['object_list']
-    # Определяем длину списка.
     news_count = len(object_list)
     assert news_count == settings.NEWS_COUNT_ON_HOME_PAGE
 
 
 def test_news_order(all_news, not_author_client):
+    """Новости отсортированны от свежей к старой."""
     News.objects.bulk_create(all_news)
     response = not_author_client.get(reverse('news:home'))
     object_list = response.context['object_list']
@@ -25,16 +26,17 @@ def test_news_order(all_news, not_author_client):
 
 @pytest.mark.usefixtures('add_two_comments')
 def test_comments_order(news, not_author_client):
+    """Комментарии отсортированны от свежих к старым."""
     detail_url = reverse('news:detail', args=(news.id,))
     response = not_author_client.get(detail_url)
     assert 'news' in response.context
     news_obj = response.context['news']
-    # Получаем все комментарии к новости.
     all_comments = news_obj.comment_set.all()
     assert all_comments[0].created < all_comments[1].created
 
 
 def test_anonymous_client_has_no_form(news):
+    """Аноним не имеет формы создания коммента."""
     client = Client()
     detail_url = reverse('news:detail', args=(news.id,))
     response = client.get(detail_url)
@@ -42,6 +44,7 @@ def test_anonymous_client_has_no_form(news):
 
 
 def test_authorized_client_has_form(not_author_client, news):
+    """Авторизованный клиент имеет форму создания коммента."""
     detail_url = reverse('news:detail', args=(news.id,))
     response = not_author_client.get(detail_url)
     assert 'form' in response.context
